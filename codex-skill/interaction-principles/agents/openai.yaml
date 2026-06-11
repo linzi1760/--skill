@@ -1,0 +1,4 @@
+interface:
+  display_name: "交互原则"
+  short_description: "启用长期协作、场景路由、主动纠偏、交付检查和复核收口"
+  default_prompt: "Use $interaction-principles to apply the longterm collaboration principles."

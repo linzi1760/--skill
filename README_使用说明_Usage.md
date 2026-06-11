@@ -1,11 +1,13 @@
 # Codex 场景化总体原则包 / Codex Scenario Rules Pack
 
-版本 / Version：v1.0  
+版本 / Version：v1.1  
 日期 / Date：2026-06-11
 
 ## 这个包解决什么问题
 
 这个包用于让 Codex 或其他代码协作代理在不同任务场景下稳定调用对应规则，而不是把所有原则混在一起无差别执行。
+
+v1.1 增加了 Skill 化增强：轻任务免打扰、任务启动规程、协作收口模板、复核点和 Codex Skill 入口。
 
 核心结构是：
 
@@ -22,6 +24,8 @@ agent-rules/                      ← 场景化规则模块
   07_交付检查_Checklists.md
   08_变更日志_ChangeLogRules.md
 templates/                        ← 常用判断模板
+commands/                         ← 可选调用模板
+codex-skill/                      ← Codex 用户级 Skill 入口
 source/                           ← 原始原则备份
 ```
 
@@ -37,6 +41,23 @@ templates/
 
 之后在 Codex 中打开该项目时，优先让它读取根目录的 `AGENTS.md`。  
 `AGENTS.md` 会作为总控入口，要求代理根据任务类型读取对应模块。
+
+## Codex Skill 安装方式
+
+如果希望在 Codex 中用一句话触发，可以安装：
+
+```text
+codex-skill/interaction-principles/
+```
+
+调用语：
+
+```text
+启用交互原则
+$interaction-principles
+```
+
+该 Skill 默认优先读取当前项目中的 `AGENTS.md` 和 `agent-rules/`，让 GitHub 包作为主版本源。
 
 ## 单文件使用方式
 
@@ -66,6 +87,7 @@ AGENTS_单文件版_SingleFile.md
 3. 按任务关键词和意图读取对应场景模块。
 4. 如果涉及交付，读取 `agent-rules/07_交付检查_Checklists.md`。
 5. 如果涉及规则、文档、原型、关键功能变化，读取 `agent-rules/08_变更日志_ChangeLogRules.md`。
+6. 对复杂任务，最终使用协作收口：当前判断、把握度、下一步最小动作、最坏风险、复核点。
 
 ## 维护原则
 
