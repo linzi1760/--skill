@@ -1,7 +1,7 @@
 import json
 import unittest
 from unittest.mock import patch, Mock
-from clawiq.runner import extract_openclaw_text, invoke_openclaw, RunnerUnavailable
+from clawiq.runner import extract_openclaw_text, invoke_openclaw, check_openclaw_cli, RunnerUnavailable
 
 
 class RunnerTests(unittest.TestCase):
@@ -27,7 +27,23 @@ class RunnerTests(unittest.TestCase):
         self.assertIn('--config-override',args)
         self.assertIn('"profile":"minimal"',args[-1])
         self.assertIn('--code-mode',args)
+        self.assertIn('--timeout',args)
+        override=json.loads(args[args.index('--config-override')+1])
+        self.assertEqual(override['tools']['deny'],['*'])
+        self.assertEqual(override['agents']['defaults']['contextInjection'],'never')
         self.assertNotIn('--deliver',args)
+
+    def test_nonzero_tool_activity_invalidates_cognitive_result(self):
+        reply={'ok':True,'status':'ok','final':'{"answer":42}', 'toolSummary':{'calls':1}}
+        with self.assertRaises(RunnerUnavailable):
+            extract_openclaw_text(json.dumps(reply))
+
+    @patch('clawiq.runner.shutil.which',return_value='/usr/bin/openclaw')
+    @patch('clawiq.runner.subprocess.run')
+    def test_doctor_rejects_incompatible_cli(self, run, which):
+        run.return_value=Mock(returncode=0,stdout="--json --cwd",stderr="")
+        with self.assertRaises(RunnerUnavailable):
+            check_openclaw_cli()
 
     @patch('clawiq.runner.shutil.which',return_value=None)
     def test_without_openclaw(self, _):

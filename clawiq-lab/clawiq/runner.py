@@ -13,6 +13,27 @@ class RunnerUnavailable(RuntimeError):
     pass
 
 
+def check_openclaw_cli(*, backend: str = "isolated") -> None:
+    """Check the installed CLI interface without any provider/model requests."""
+    if backend not in ("isolated", "gateway"):
+        raise ValueError("unsupported OpenClaw backend")
+    if shutil.which("openclaw") is None:
+        raise RunnerUnavailable("OpenClaw CLI is not installed in PATH")
+    cmd = ["openclaw", "agent", "exec", "--help"] if backend == "isolated" else ["openclaw", "agent", "--help"]
+    required = (("--message-file", "--cwd", "--json", "--code-mode", "--config-override", "--timeout")
+                if backend == "isolated" else
+                ("--message-file", "--agent", "--session-id", "--json", "--timeout"))
+    try:
+        proc = subprocess.run(cmd, capture_output=True, text=True, timeout=15, check=False)
+    except (OSError, subprocess.TimeoutExpired) as exc:
+        raise RunnerUnavailable("OpenClaw CLI preflight failed") from exc
+    if proc.returncode:
+        raise RunnerUnavailable("OpenClaw CLI help returned an error")
+    missing = [flag for flag in required if flag not in proc.stdout + "\n" + proc.stderr]
+    if missing:
+        raise RunnerUnavailable("Unsupported OpenClaw CLI: missing " + ", ".join(missing))
+
+
 def extract_openclaw_text(text: str) -> str:
     """Stable `openclaw agent exec --json` envelope since 2026.
 
@@ -24,6 +45,11 @@ def extract_openclaw_text(text: str) -> str:
         raise RunnerUnavailable("OpenClaw did not return JSON") from exc
     if not isinstance(result, dict) or result.get("ok") is not True or result.get("status") != "ok":
         raise RunnerUnavailable("OpenClaw reported an unsuccessful run")
+    tool_summary = result.get("toolSummary")
+    if isinstance(tool_summary, dict) and "calls" in tool_summary:
+        calls = tool_summary["calls"]
+        if type(calls) is not int or calls != 0:
+            raise RunnerUnavailable("Tool activity detected during a no-tools cognitive test")
     answer = result.get("final")
     if not isinstance(answer, str) or not answer.strip():
         raise RunnerUnavailable("OpenClaw returned no final text")
@@ -38,14 +64,17 @@ def invoke_openclaw(prompt: str, *, timeout: int = 120) -> dict[str, Any]:
         prompt_path = root / "question.md"
         prompt_path.write_text(prompt, encoding="utf-8")
         # Isolated per question: fresh one-shot agent state and workspace.
-        # The `minimal` profile removes normal filesystem/network/tool access;
-        # gateway is additionally denied. No delivery to chat channels.
+        # Explicit tool denial is stronger than the minimal profile alone.
+        # This is NOT an operating-system/container sandbox.
+        override = {"tools": {"profile": "minimal", "deny": ["*"]},
+                    "agents": {"defaults": {"contextInjection": "never"}}}
         args = ["openclaw", "agent", "exec", "--message-file", str(prompt_path),
-                "--cwd", str(root), "--json", "--code-mode", "direct",
-                "--config-override", '{"tools":{"profile":"minimal","deny":["gateway"]}}']
+                "--cwd", str(root), "--json", "--timeout", str(timeout),
+                "--code-mode", "direct",
+                "--config-override", json.dumps(override, separators=(",", ":"))]
         try:
             completed = subprocess.run(args, cwd=root, capture_output=True, text=True,
-                                       timeout=timeout, check=False)
+                                       timeout=timeout + 30, check=False)
         except subprocess.TimeoutExpired as exc:
             raise RunnerUnavailable("OpenClaw attempt timed out") from exc
         if completed.returncode != 0:
