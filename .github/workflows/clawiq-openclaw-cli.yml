@@ -31,5 +31,6 @@ jobs:
         working-directory: clawiq-lab
         run: |
           openclaw --version
-          python -m clawiq doctor
+          python -m clawiq doctor --model openai/clawiq-offline-fixture
           python -m clawiq doctor --backend gateway
+

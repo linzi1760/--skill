@@ -168,3 +168,20 @@ python -m compileall -q clawiq tests
 欢迎报告误判、贡献能程序校验的新题型、帮助进行不同 OpenClaw 版本的实际兼容性验证。优先阅读 [路线图](docs/ROADMAP.md)。涉及真实工具调用或跨会话记忆的提案，需同时提供隔离执行和防数据泄露的策略。
 
 开源协议：MIT，见 [LICENSE](LICENSE)。独立社区项目，与 OpenClaw 官方无隶属关系。
+
+
+
+## OpenClaw 2026.10.2：显式最小配置模式
+
+该固定版本只有 `--config`，没有 `--config-override`。使用新增 `--model provider/model`，ClawIQ 生成经该版本 schema 校验的最小配置，不导入原有配置、插件或凭据存储；缺少模型参数时会明确失败，不降级到不受限运行。支持 override 的版本原有用法保持不变。
+
+```bash
+# 仅参数检查，不调用模型
+python -m clawiq doctor --model openai/YOUR_MODEL
+# 用户确认费用后自行运行；只转交明确选择的环境变量
+python -m clawiq run --model openai/YOUR_MODEL --provider-env OPENAI_API_KEY --suite quick --out ./explicit-test --ack-provider-calls
+```
+
+模型名必须替换为服务商实际支持的模型。凭据由用户在自己的环境设置，不放入本项目文件、命令参数或报告。允许的变量名为 OPENAI_API_KEY、ANTHROPIC_API_KEY、GEMINI_API_KEY、GOOGLE_API_KEY；其他鉴权方式暂不支持此模式。每题使用临时 HOME/state、禁插件、禁全部工具、禁止上下文自动注入、关闭 shell 环境导入；只保留运行所需 PATH/SYSTEMROOT 与明确选择的提供商变量。原始回答仍私有保存。
+
+报告模式为 `openclaw-exec-config`，应与继承用户配置的测评区分；它不测量用户的已有 Skills/记忆/模型运行时配置。缺少零工具调用回执时失败，不给有效分数。临时目录是进程级隔离，不是操作系统或网络沙箱；真实运行需要访问选择的模型提供商，可能收费。当前证据只有官方 CLI 帮助/schema 校验和模拟进程测试，真实模型与工具拒绝端到端尚未验证。

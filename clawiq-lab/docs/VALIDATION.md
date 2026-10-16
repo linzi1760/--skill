@@ -51,3 +51,10 @@ python -m clawiq verify ./_example_tmp
 - **撤回“绿色 CI 即证明 isolated CLI 兼容”的推断**：[基线真实 CLI 日志](https://github.com/linzi1760/--skill/actions/runs/38925522644/job/117055947110) 显示 OpenClaw 2026.10.2 缺少 `--config-override`。旧入口把此错误吞成退出码 0；Gateway doctor 的参数检查通过。
 - 本修复不移除安全配置，也不伪造兼容通过。隔离模式的配置接口需按固定版本官方实现修复并重新验收。
 - 未调用真实模型、用户 Gateway 或收费 API；未验证真实工具和跨会话记忆；未做浏览器视觉回归。
+
+## 显式配置候选复验
+
+- 官方 OpenClaw 2026.10.2：无凭据、临时 HOME/state 下 `config validate --json` 返回 valid:true/warnings:[]，`agent exec --help` 包含 --config。证据：https://github.com/linzi1760/--skill/actions/runs/38927334531/job/117062122357 。
+- 本地 Python 3.12.14：40 个测试通过；新增参数拒绝、环境白名单、配置不含凭据/禁止插件与工具、临时文件权限和清理、缺失工具回执拒绝、12题模拟进程→verify。compileall 通过。
+- 模式为新增显式接口；旧 override 模式保留。只支持列明的环境变量 API key，不自动读取存储登录或用户配置。固定 CLI 的默认无模型命令仍有意失败，并提示显式模型参数。
+- 不代表模型请求成功、真实工具防护生效、跨会话记忆或浏览器验收通过。

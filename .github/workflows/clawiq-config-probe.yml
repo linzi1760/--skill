@@ -1,0 +1,23 @@
+name: ClawIQ credential-free config design probe
+on:
+  push:
+    branches: ['test/clawiq-pinned-config-probe']
+  pull_request:
+    paths: ['clawiq-lab/tests/probe_pinned_config.py', '.github/workflows/clawiq-config-probe.yml']
+permissions:
+  contents: read
+jobs:
+  schema-only:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24.21.0'
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+      - run: npm install -g openclaw@2026.10.2 --no-audit --no-fund
+      - name: Read-only candidate schema probe (no agent execution)
+        run: python clawiq-lab/tests/probe_pinned_config.py

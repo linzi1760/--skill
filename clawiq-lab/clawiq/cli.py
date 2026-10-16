@@ -10,7 +10,7 @@ from typing import Any
 
 from .core import SUITES, generate, validate_form
 from .reporting import render_html
-from .runner import invoke_openclaw, invoke_gateway_agent, check_openclaw_cli, RunnerUnavailable
+from .runner import invoke_openclaw, invoke_gateway_agent, check_openclaw_cli, RunnerUnavailable, invoke_configured_openclaw, validate_model_options
 from .scoring import score, verify_report
 
 
@@ -68,8 +68,10 @@ def command_generate(args: argparse.Namespace) -> int:
 
 
 def command_doctor(args: argparse.Namespace) -> int:
-    check_openclaw_cli(backend=args.backend)
-    print(f"READY: {args.backend} CLI flags verified; no model calls made")
+    if args.backend == "gateway" and args.model:
+        raise ValueError("--model is only for the isolated backend")
+    mode = check_openclaw_cli(backend=args.backend, model=args.model)
+    print(f"READY: {args.backend}/{mode} CLI flags verified; no model calls made")
     return 0
 
 
@@ -80,7 +82,10 @@ def command_run(args: argparse.Namespace) -> int:
         raise ValueError("Gateway mode uses your real agent and installed tools. Pass --allow-existing-tools to opt in explicitly.")
     if not 10 <= args.timeout <= 1800:
         raise ValueError("--timeout must be between 10 and 1800 seconds")
-    check_openclaw_cli(backend=args.backend)
+    validate_model_options(args.model, args.provider_env)
+    if args.backend == "gateway" and (args.model or args.provider_env):
+        raise ValueError("--model/--provider-env are only for the isolated backend")
+    config_mode = check_openclaw_cli(backend=args.backend, model=args.model)
     out = Path(args.out)
     public, key = _init_form(out, args.suite, args.seed)
     rows: list[dict[str, Any]] = []
@@ -88,6 +93,9 @@ def command_run(args: argparse.Namespace) -> int:
         try:
             if args.backend == "gateway":
                 attempt = invoke_gateway_agent(item["prompt"], agent_id=args.agent_id, timeout=args.timeout)
+            elif config_mode == "config":
+                attempt = invoke_configured_openclaw(item["prompt"], model=args.model,
+                                                     provider_env=args.provider_env, timeout=args.timeout)
             else:
                 attempt = invoke_openclaw(item["prompt"], timeout=args.timeout)
             row = {"id": item["id"], "raw": attempt["raw"]}
@@ -110,7 +118,7 @@ def command_run(args: argparse.Namespace) -> int:
     if len(rows) != len(public["items"]):
         print(f"Incomplete live run: {len(rows)}/{len(public['items'])}; retained private checkpoint.", file=sys.stderr)
         return 2
-    result = _finish(out, public, key, rows, mode=("openclaw-gateway" if args.backend == "gateway" else "openclaw-exec"), label=args.label, demo=False)
+    result = _finish(out, public, key, rows, mode=("openclaw-gateway" if args.backend == "gateway" else "openclaw-exec-config" if config_mode == "config" else "openclaw-exec"), label=args.label, demo=False)
     (out / "responses.checkpoint.private.json").unlink(missing_ok=True)
     if result["status"] != "complete":
         print("Invalid run due to provider failure.", file=sys.stderr)
@@ -165,12 +173,15 @@ def main(argv: list[str] | None = None) -> int:
         cmd.add_argument("--seed", type=int, default=20261016)
         cmd.add_argument("--out", required=True, help="new output folder (must not exist)")
     commands.choices["run"].add_argument("--label", default="我的龙虾")
+    commands.choices["run"].add_argument("--model", help="explicit provider/model; uses minimal config with no ambient credential discovery")
+    commands.choices["run"].add_argument("--provider-env", action="append", default=[], help="explicit provider API-key environment name to pass, repeatable; values never written to files")
     commands.choices["run"].add_argument("--backend", choices=["isolated", "gateway"], default="isolated")
     commands.choices["run"].add_argument("--agent-id", default="main", help="only for gateway backend")
     commands.choices["run"].add_argument("--allow-existing-tools", action="store_true", help="ack real Gateway agent context, tools and persistent session effects")
     commands.choices["run"].add_argument("--timeout", type=int, default=120, help="seconds per question")
     commands.choices["run"].add_argument("--ack-provider-calls", action="store_true")
     doctor = commands.add_parser("doctor", help="read-only CLI preflight; no model calls")
+    doctor.add_argument("--model", help="explicit provider/model for config-only CLI versions; no model call")
     doctor.add_argument("--backend", choices=["isolated", "gateway"], default="isolated")
     imp = commands.add_parser("score", help="score external/manual response JSON list")
     imp.add_argument("--form-dir", required=True)
@@ -195,3 +206,4 @@ def main(argv: list[str] | None = None) -> int:
 
 if __name__ == "__main__":
     raise SystemExit(main())
+
