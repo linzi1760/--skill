@@ -1,0 +1,35 @@
+name: ClawIQ OpenClaw CLI Contract
+
+on:
+  push:
+    paths:
+      - 'clawiq-lab/**'
+      - '.github/workflows/clawiq-openclaw-cli.yml'
+  pull_request:
+    paths:
+      - 'clawiq-lab/**'
+      - '.github/workflows/clawiq-openclaw-cli.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  real-cli-help:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24.21.0'
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+      - name: Install pinned official OpenClaw CLI (no model keys)
+        run: npm install -g openclaw@2026.10.2 --no-audit --no-fund
+      - name: Verify installed OpenClaw CLI flags without model calls
+        working-directory: clawiq-lab
+        run: |
+          openclaw --version
+          python -m clawiq doctor
+          python -m clawiq doctor --backend gateway
