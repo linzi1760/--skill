@@ -1,0 +1,19 @@
+[build-system]
+requires = ["setuptools>=61"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "clawiq-lab"
+version = "0.1.0"
+description = "Evidence-first, entertainment-oriented intelligence diagnostics for your OpenClaw agent"
+readme = "README.md"
+requires-python = ">=3.10"
+license = "MIT"
+authors = [{name="ClawIQ Lab contributors"}]
+dependencies = []
+
+[project.scripts]
+clawiq = "clawiq.cli:main"
+
+[tool.setuptools.packages.find]
+include = ["clawiq*"]

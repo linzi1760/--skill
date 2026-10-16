@@ -1,0 +1,213 @@
+{
+  "schema": "clawiq-0.1",
+  "status": "complete",
+  "demo": true,
+  "mode": "synthetic",
+  "agent_label": "演示龙虾 · 非真实测试",
+  "suite": "quick",
+  "seed": 20261016,
+  "form_commitment": "0a349b8b4d84b7efb68282ecdb31f223110a63fd512a427cee20dd4debba8a36",
+  "sample_size": 12,
+  "brain_score": 67.5,
+  "task_score": 100.0,
+  "overall": 80.5,
+  "dimensions": {
+    "reasoning": {
+      "label": "逻辑推理",
+      "correct": 2,
+      "count": 4,
+      "percent": 50.0
+    },
+    "instruction": {
+      "label": "理解与遵循",
+      "correct": 2,
+      "count": 3,
+      "percent": 66.7
+    },
+    "reliability": {
+      "label": "事实可靠性",
+      "correct": 3,
+      "count": 3,
+      "percent": 100.0
+    },
+    "workflow": {
+      "label": "模拟任务执行",
+      "correct": 2,
+      "count": 2,
+      "percent": 100.0
+    }
+  },
+  "style": {
+    "name": "谨慎求证虾",
+    "description": "目前在识别证据不足与冲突方面表现突出"
+  },
+  "strength": "模拟任务执行",
+  "weakness": "逻辑推理",
+  "cases": [
+    {
+      "id": "rel-02-19428257",
+      "dimension": "reliability",
+      "family": "evidence",
+      "question": "请仅根据以下模拟资料回答，不得根据常识猜测。文件 F-743 已创建，登记日期为2026-09-16。未提供负责人字段。问题：文件 F-743 的负责人是谁？如果唯一明确则答 {\"status\":\"supported\",\"answer\":\"姓名\"}；如果缺失则答 {\"status\":\"unknown\",\"answer\":null}；如果相互冲突则答 {\"status\":\"conflict\",\"answer\":null}。",
+      "correct": true,
+      "error": null,
+      "expected": {
+        "status": "unknown",
+        "answer": null
+      },
+      "observed": {
+        "status": "unknown",
+        "answer": null
+      },
+      "reason": "答案符合客观标准"
+    },
+    {
+      "id": "rea-02-0865f09a",
+      "dimension": "reasoning",
+      "family": "quantity",
+      "question": "四箱积木分别有 14、3、11、6 块。从前两箱合计取走 9 块（不论分别来自哪箱），再向第四箱放入 6 块。现在四箱共有多少块？不要使用外部工具。",
+      "correct": true,
+      "error": null,
+      "expected": 31,
+      "observed": 31,
+      "reason": "答案符合客观标准"
+    },
+    {
+      "id": "ins-02-348558e5",
+      "dimension": "instruction",
+      "family": "filter",
+      "question": "以下商品均为模拟数据：[{\"id\":\"P1\",\"price\":25,\"stock\":1,\"active\":true},{\"id\":\"P2\",\"price\":19,\"stock\":1,\"active\":true},{\"id\":\"P3\",\"price\":29,\"stock\":6,\"active\":true},{\"id\":\"P4\",\"price\":12,\"stock\":4,\"active\":true},{\"id\":\"P5\",\"price\":33,\"stock\":2,\"active\":false},{\"id\":\"P6\",\"price\":12,\"stock\":2,\"active\":false},{\"id\":\"P7\",\"price\":21,\"stock\":6,\"active\":true}]。筛选 active=true 且 stock≥2 且 price≤32 的商品；按 price 从小到大排序，同价按 id 字母数字升序。仅返回 id 数组，没有符合条件的返回空数组。",
+      "correct": false,
+      "error": null,
+      "expected": [
+        "P4",
+        "P7",
+        "P3"
+      ],
+      "observed": "未通过；原始答复仅保存在本地私有文件",
+      "reason": "多条件筛选和排序"
+    },
+    {
+      "id": "ins-03-9dd694fd",
+      "dimension": "instruction",
+      "family": "filter",
+      "question": "以下商品均为模拟数据：[{\"id\":\"P1\",\"price\":23,\"stock\":6,\"active\":true},{\"id\":\"P2\",\"price\":28,\"stock\":2,\"active\":true},{\"id\":\"P3\",\"price\":12,\"stock\":3,\"active\":true},{\"id\":\"P4\",\"price\":18,\"stock\":0,\"active\":true},{\"id\":\"P5\",\"price\":27,\"stock\":4,\"active\":false},{\"id\":\"P6\",\"price\":32,\"stock\":0,\"active\":true},{\"id\":\"P7\",\"price\":38,\"stock\":5,\"active\":true}]。筛选 active=true 且 stock≥4 且 price≤33 的商品；按 price 从小到大排序，同价按 id 字母数字升序。仅返回 id 数组，没有符合条件的返回空数组。",
+      "correct": true,
+      "error": null,
+      "expected": [
+        "P1"
+      ],
+      "observed": [
+        "P1"
+      ],
+      "reason": "答案符合客观标准"
+    },
+    {
+      "id": "rea-04-76280dc5",
+      "dimension": "reasoning",
+      "family": "quantity",
+      "question": "四箱积木分别有 8、10、7、11 块。从前两箱合计取走 9 块（不论分别来自哪箱），再向第四箱放入 6 块。现在四箱共有多少块？不要使用外部工具。",
+      "correct": true,
+      "error": null,
+      "expected": 33,
+      "observed": 33,
+      "reason": "答案符合客观标准"
+    },
+    {
+      "id": "ins-01-01162ad4",
+      "dimension": "instruction",
+      "family": "filter",
+      "question": "以下商品均为模拟数据：[{\"id\":\"P1\",\"price\":36,\"stock\":2,\"active\":true},{\"id\":\"P2\",\"price\":15,\"stock\":1,\"active\":true},{\"id\":\"P3\",\"price\":32,\"stock\":0,\"active\":false},{\"id\":\"P4\",\"price\":38,\"stock\":3,\"active\":false},{\"id\":\"P5\",\"price\":21,\"stock\":7,\"active\":false},{\"id\":\"P6\",\"price\":36,\"stock\":5,\"active\":true},{\"id\":\"P7\",\"price\":28,\"stock\":3,\"active\":false}]。筛选 active=true 且 stock≥3 且 price≤28 的商品；按 price 从小到大排序，同价按 id 字母数字升序。仅返回 id 数组，没有符合条件的返回空数组。",
+      "correct": true,
+      "error": null,
+      "expected": [],
+      "observed": [],
+      "reason": "答案符合客观标准"
+    },
+    {
+      "id": "rea-03-50786b64",
+      "dimension": "reasoning",
+      "family": "recurrence",
+      "question": "给定整数序列 X0=10, X1=15；当 n≥2 时 Xn=(X(n-1)+2×X(n-2)+5) mod 17。请计算 X7。不要使用外部工具。",
+      "correct": false,
+      "error": null,
+      "expected": 0,
+      "observed": "未通过；原始答复仅保存在本地私有文件",
+      "reason": "递推与模运算"
+    },
+    {
+      "id": "rel-01-62e876e7",
+      "dimension": "reliability",
+      "family": "evidence",
+      "question": "请仅根据以下模拟资料回答，不得根据常识猜测。文件 F-263 的负责人是竹影，审核人是春芽。问题：文件 F-263 的负责人是谁？如果唯一明确则答 {\"status\":\"supported\",\"answer\":\"姓名\"}；如果缺失则答 {\"status\":\"unknown\",\"answer\":null}；如果相互冲突则答 {\"status\":\"conflict\",\"answer\":null}。",
+      "correct": true,
+      "error": null,
+      "expected": {
+        "status": "supported",
+        "answer": "竹影"
+      },
+      "observed": {
+        "status": "supported",
+        "answer": "竹影"
+      },
+      "reason": "答案符合客观标准"
+    },
+    {
+      "id": "rel-03-306a8e2b",
+      "dimension": "reliability",
+      "family": "evidence",
+      "question": "请仅根据以下模拟资料回答，不得根据常识猜测。记录甲：文件 F-459 的负责人是竹影。记录乙：同一文件 F-459 的负责人是白露。两条记录同权重，无修订信息。问题：文件 F-459 的负责人是谁？如果唯一明确则答 {\"status\":\"supported\",\"answer\":\"姓名\"}；如果缺失则答 {\"status\":\"unknown\",\"answer\":null}；如果相互冲突则答 {\"status\":\"conflict\",\"answer\":null}。",
+      "correct": true,
+      "error": null,
+      "expected": {
+        "status": "conflict",
+        "answer": null
+      },
+      "observed": {
+        "status": "conflict",
+        "answer": null
+      },
+      "reason": "答案符合客观标准"
+    },
+    {
+      "id": "rea-01-d2f04916",
+      "dimension": "reasoning",
+      "family": "recurrence",
+      "question": "给定整数序列 X0=14, X1=6；当 n≥2 时 Xn=(X(n-1)+2×X(n-2)+7) mod 19。请计算 X7。不要使用外部工具。",
+      "correct": false,
+      "error": null,
+      "expected": 0,
+      "observed": "未通过；原始答复仅保存在本地私有文件",
+      "reason": "递推与模运算"
+    },
+    {
+      "id": "wor-02-8ba4ab82",
+      "dimension": "workflow",
+      "family": "dependency",
+      "question": "模拟工作流：A耗时5小时，B耗时5小时；C耗时4小时，必须等A和B都完成；D耗时4小时，必须等B完成。任务可以并行且从0小时开始，整个项目在C和D都完成时结束。最早多少小时完成？",
+      "correct": true,
+      "error": null,
+      "expected": 9,
+      "observed": 9,
+      "reason": "答案符合客观标准"
+    },
+    {
+      "id": "wor-01-46d3afb0",
+      "dimension": "workflow",
+      "family": "virtual-data",
+      "question": "模拟文件 orders.json 内容如下：[{\"ref\":\"R1\",\"sku\":\"C\",\"qty\":1,\"valid\":false},{\"ref\":\"R2\",\"sku\":\"C\",\"qty\":10,\"valid\":true},{\"ref\":\"R3\",\"sku\":\"A\",\"qty\":9,\"valid\":false},{\"ref\":\"R4\",\"sku\":\"C\",\"qty\":10,\"valid\":true},{\"ref\":\"R5\",\"sku\":\"A\",\"qty\":5,\"valid\":true},{\"ref\":\"R6\",\"sku\":\"D\",\"qty\":3,\"valid\":true},{\"ref\":\"R7\",\"sku\":\"A\",\"qty\":9,\"valid\":true},{\"ref\":\"R8\",\"sku\":\"A\",\"qty\":9,\"valid\":true}]。主人要求统计 sku=C 且 valid=true 的数量合计。请仅依据提供的文件内容计算，不要访问真实文件系统。",
+      "correct": true,
+      "error": null,
+      "expected": 20,
+      "observed": 20,
+      "reason": "答案符合客观标准"
+    }
+  ],
+  "notice": "趣味能力指数；不是人类IQ，不代表人类百分位或经心理测量校准的智商。",
+  "limitations": [
+    "题量有限；尤其 quick 只适合探索性体验，不适合严肃排名。",
+    "工作任务为模拟资料处理，不等于已经验证了真实外部工具调用。",
+    "能力画像反映该次测试表现，不表示 AI 有稳定人格或意识。"
+  ],
+  "report_hash": "b78a102cbf64e671b4bf3d77a17d9771f1bb2df9d2db0fcb980be0ce17fcc3b2"
+}

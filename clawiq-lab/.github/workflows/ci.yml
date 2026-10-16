@@ -1,0 +1,33 @@
+name: ClawIQ Lab tests
+on:
+  push:
+    paths:
+      - 'clawiq/**'
+      - 'tests/**'
+      - 'web/**'
+      - 'pyproject.toml'
+  pull_request:
+    paths:
+      - 'clawiq/**'
+      - 'tests/**'
+      - 'web/**'
+      - 'pyproject.toml'
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python: ['3.10', '3.11', '3.12', '3.13']
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python }}
+      - name: Test offline evaluation
+        run: |
+          python -m unittest discover -s tests -v
+          python -m compileall -q clawiq tests
+      - name: Offline demo and verify
+        run: |
+          python -m clawiq demo --suite quick --out ./ci-demo
+          python -m clawiq verify ./ci-demo

@@ -1,0 +1,32 @@
+name: ClawIQ Lab CI
+on:
+  push:
+    paths:
+      - 'clawiq-lab/**'
+      - '.github/workflows/clawiq-lab.yml'
+  pull_request:
+    paths:
+      - 'clawiq-lab/**'
+      - '.github/workflows/clawiq-lab.yml'
+jobs:
+  offline-tests:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python: ['3.10','3.11','3.12','3.13']
+    defaults:
+      run:
+        working-directory: clawiq-lab
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python }}
+      - name: Python tests
+        run: |
+          python -m unittest discover -s tests -v
+          python -m compileall -q clawiq tests
+      - name: Demo report verification
+        run: |
+          python -m clawiq demo --suite quick --out ./ci-demo
+          python -m clawiq verify ./ci-demo

@@ -1,0 +1,16 @@
+__pycache__/
+*.py[cod]
+.venv/
+*.egg-info/
+.pytest_cache/
+.DS_Store
+my-demo/
+my-first-test/
+my-standard-test/
+my-manual-result/
+exam-*/
+my-*/
+*.private.json
+responses.checkpoint.private.json
+.env
+.env.*
