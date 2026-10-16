@@ -3,14 +3,12 @@ import json
 import os
 from pathlib import Path
 import subprocess
+import sys
 import tempfile
 
-CANDIDATE = {
-    "tools": {"profile": "minimal", "deny": ["*"]},
-    "agents": {"defaults": {"contextInjection": "never", "skipBootstrap": True}},
-    "plugins": {"enabled": False},
-    "env": {"shellEnv": {"enabled": False}},
-}
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+from clawiq.runner import minimal_config
+CANDIDATE = minimal_config()
 with tempfile.TemporaryDirectory(prefix="clawiq-config-probe-") as tmp:
     root = Path(tmp)
     config = root / "openclaw.json"
