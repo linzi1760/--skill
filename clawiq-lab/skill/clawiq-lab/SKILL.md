@@ -4,7 +4,7 @@ description: 为自己养的 OpenClaw 智能体运行 ClawIQ 能力体检，生�
 license: MIT
 metadata:
   author: ClawIQ Lab contributors
-  version: "0.1.0"
+  version: "0.1.1"
 ---
 
 # ClawIQ Lab — 龙虾智力研究所
@@ -25,7 +25,7 @@ metadata:
 
 ## Workflow
 
-1. 在本 Skill 所属项目根目录检查 `python --version`、`python -m clawiq --help`。
+1. 在本 Skill 所属项目根目录检查 `python --version`、`python -m clawiq --help`。真实测评前使用 `python -m clawiq doctor` 做只读 CLI 兼容预检。
 2. 第一次体验使用 `python -m clawiq demo --suite quick --out ./local-demo`，并明确报告上的 DEMO 标记。
 3. 需要测试真人养成龙虾且已确认调用成本时，使用 `python -m clawiq run --suite quick --out ./local-first-run --label "我的龙虾" --ack-provider-calls`。
 4. 使用 `python -m clawiq verify ./local-first-run` 对表单、私有答案、原始响应与报告重新计算复核。
