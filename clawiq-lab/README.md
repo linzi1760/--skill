@@ -1,4 +1,4 @@
-# 🦞 ClawIQ Lab · 龙虾智力研究所
+# 🦞 ClawIQ Lab · 龙虾智力评测
 
 **给自己养的 OpenClaw 做一次有证据的“智力体检”。**
 

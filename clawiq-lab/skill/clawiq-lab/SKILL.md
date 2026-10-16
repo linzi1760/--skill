@@ -7,7 +7,7 @@ metadata:
   version: "0.1.1"
 ---
 
-# ClawIQ Lab — 龙虾智力研究所
+# ClawIQ Lab — 龙虾智力评测
 
 ## Purpose
 

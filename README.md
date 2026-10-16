@@ -111,4 +111,4 @@ AGENTS_单文件版_SingleFile.md
 
 ## 🦞 独立开源子项目
 
-- [ClawIQ Lab · 龙虾智力研究所](clawiq-lab/README.md)：专门为自己养的 OpenClaw 智能体提供合成题智力测评、独立评分、趣味报告与可复核记录。代码、Skill、测试及 HTML 均在 `clawiq-lab/` 目录，MIT 开源。
+- [ClawIQ Lab · 龙虾智力评测](clawiq-lab/README.md)：专门为自己养的 OpenClaw 智能体提供合成题智力测评、独立评分、趣味报告与可复核记录。代码、Skill、测试及 HTML 均在 `clawiq-lab/` 目录，MIT 开源。
