@@ -10,7 +10,7 @@ from typing import Any
 
 from .core import SUITES, generate, validate_form
 from .reporting import render_html
-from .runner import invoke_openclaw, invoke_gateway_agent, RunnerUnavailable
+from .runner import invoke_openclaw, invoke_gateway_agent, check_openclaw_cli, RunnerUnavailable
 from .scoring import score, verify_report
 
 
@@ -67,6 +67,12 @@ def command_generate(args: argparse.Namespace) -> int:
     return 0
 
 
+def command_doctor(args: argparse.Namespace) -> int:
+    check_openclaw_cli(backend=args.backend)
+    print(f"READY: {args.backend} CLI flags verified; no model calls made")
+    return 0
+
+
 def command_run(args: argparse.Namespace) -> int:
     if not args.ack_provider_calls:
         raise ValueError("Live tests may consume API tokens. Pass --ack-provider-calls to opt in.")
@@ -74,6 +80,7 @@ def command_run(args: argparse.Namespace) -> int:
         raise ValueError("Gateway mode uses your real agent and installed tools. Pass --allow-existing-tools to opt in explicitly.")
     if not 10 <= args.timeout <= 1800:
         raise ValueError("--timeout must be between 10 and 1800 seconds")
+    check_openclaw_cli(backend=args.backend)
     out = Path(args.out)
     public, key = _init_form(out, args.suite, args.seed)
     rows: list[dict[str, Any]] = []
@@ -163,6 +170,8 @@ def main(argv: list[str] | None = None) -> int:
     commands.choices["run"].add_argument("--allow-existing-tools", action="store_true", help="ack real Gateway agent context, tools and persistent session effects")
     commands.choices["run"].add_argument("--timeout", type=int, default=120, help="seconds per question")
     commands.choices["run"].add_argument("--ack-provider-calls", action="store_true")
+    doctor = commands.add_parser("doctor", help="read-only CLI preflight; no model calls")
+    doctor.add_argument("--backend", choices=["isolated", "gateway"], default="isolated")
     imp = commands.add_parser("score", help="score external/manual response JSON list")
     imp.add_argument("--form-dir", required=True)
     imp.add_argument("--responses", required=True)
@@ -175,10 +184,11 @@ def main(argv: list[str] | None = None) -> int:
     render.add_argument("--out", required=True)
     args = parser.parse_args(argv)
     funcs = {"demo": command_demo, "generate": command_generate, "run": command_run,
-             "score": command_score, "verify": command_verify, "render": command_render}
+             "doctor": command_doctor, "score": command_score,
+             "verify": command_verify, "render": command_render}
     try:
         return funcs[args.command](args)
-    except (ValueError, FileNotFoundError, FileExistsError, PermissionError) as exc:
+    except (ValueError, FileNotFoundError, FileExistsError, PermissionError, RunnerUnavailable) as exc:
         print(f"ClawIQ error: {exc}", file=sys.stderr)
         return 1
 
