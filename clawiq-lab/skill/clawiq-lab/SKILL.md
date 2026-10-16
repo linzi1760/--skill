@@ -1,6 +1,6 @@
 ---
 name: clawiq-lab
-description: 为自己养的 OpenClaw 智能体运行 ClawIQ 能力体检，生成可核验的趣味智力报告。用于用户明确提出测评、复测或查看报告时；不用于未经同意自动调用付费模型或改变龙虾配置。
+description: 面向 OpenClaw、NanoClaw、ZeroClaw、PicoClaw、IronClaw 等个人 AI 智能体提供 ClawIQ 能力体检与趣味报告。当前只有 OpenClaw CLI 自动接入，其余通过手动答卷评分。未经同意不调用付费模型或修改配置。
 license: MIT
 metadata:
   author: ClawIQ Lab contributors
@@ -11,7 +11,7 @@ metadata:
 
 ## Purpose
 
-帮助龙虾主人对自己已配置的 OpenClaw 进行一次性合成题能力测试，输出 0–100 的产品内指标、各维度优劣势和本地离线 HTML 诊断报告。
+帮助主人评测已配置的个人 AI 智能体，输出 0–100 的产品内指标、优势与短板及本地 HTML 报告。OpenClaw 支持 CLI 自动测评，其余暂用 generate/score 手动答卷流程。
 
 ## Critical boundaries
 
@@ -25,7 +25,7 @@ metadata:
 
 ## Workflow
 
-1. 在本 Skill 所属项目根目录检查 `python --version`、`python -m clawiq --help`。真实测评前使用 `python -m clawiq doctor` 做只读 CLI 兼容预检。
+1. 先确认接入方式：OpenClaw 走 CLI；其他龙虾使用 `generate` 出卷、收集全部答卷后用 `score` 评分和 `verify` 核验，**不得误用 OpenClaw CLI 测别的智能体**。OpenClaw 模式继续在本 Skill 所属项目根目录检查 `python --version`、`python -m clawiq --help`。真实测评前使用 `python -m clawiq doctor` 做只读 CLI 兼容预检。
 2. 第一次体验使用 `python -m clawiq demo --suite quick --out ./local-demo`，并明确报告上的 DEMO 标记。
 3. 需要测试真人养成龙虾且已确认调用成本时，使用 `python -m clawiq run --suite quick --out ./local-first-run --label "我的龙虾" --ack-provider-calls`。
 4. 使用 `python -m clawiq verify ./local-first-run` 对表单、私有答案、原始响应与报告重新计算复核。
@@ -42,4 +42,4 @@ metadata:
 
 ## References
 
-查看项目 `README.md`、`docs/METHODOLOGY.md`、`docs/SECURITY.md` 和 `docs/VALIDATION.md`。
+查看项目 `README.md`、`docs/USAGE.md`、`docs/METHODOLOGY.md`、`docs/SECURITY.md` 和 `docs/VALIDATION.md`。
