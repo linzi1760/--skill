@@ -41,3 +41,13 @@ python -m clawiq verify ./_example_tmp
 - 新增测试：模拟 `openclaw` 可执行文件，实际执行12题流程、评分、报告复核；模拟违规工具调用时应停止且只留私有检查点；缺失 CLI 时不创建空成绩目录。
 - 进程级测试属于**模拟验证**，不能替代真实 OpenClaw 服务商端到端验收。
 - 实际通过/失败状态以此版本对应的 GitHub Actions CI 结果为准。
+
+
+## 2026-10-16 独立复验：模块退出码与真实 CLI 阻塞
+
+- 基线：`a3d702a04f9d0c8071b7e8f85878076339800909`，Python 3.12.14。
+- 31 个原有离线测试通过；quick 12 题及 standard 40 题 demo → verify 均通过。
+- 发现 `python -m clawiq` 丢弃 main 返回值：缺少调用授权、缺少 CLI 等错误退出为 0。修正为 `raise SystemExit(main())`，加入四个真实 Python 子进程回归，35 个测试通过；compileall 通过。
+- **撤回“绿色 CI 即证明 isolated CLI 兼容”的推断**：[基线真实 CLI 日志](https://github.com/linzi1760/--skill/actions/runs/38925522644/job/117055947110) 显示 OpenClaw 2026.10.2 缺少 `--config-override`。旧入口把此错误吞成退出码 0；Gateway doctor 的参数检查通过。
+- 本修复不移除安全配置，也不伪造兼容通过。隔离模式的配置接口需按固定版本官方实现修复并重新验收。
+- 未调用真实模型、用户 Gateway 或收费 API；未验证真实工具和跨会话记忆；未做浏览器视觉回归。
