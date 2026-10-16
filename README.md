@@ -107,3 +107,8 @@ AGENTS_单文件版_SingleFile.md
 - 决断收口：复杂任务补充当前判断、把握度、下一步最小动作、最坏风险和复核点。
 - 交付收口模板：避免只写“已测试”，必须说明具体检查链路。
 - Codex Skill 入口：新增 `codex-skill/interaction-principles`，便于在本机稳定触发。
+
+
+## 🦞 独立开源子项目
+
+- [ClawIQ Lab · 龙虾智力研究所](clawiq-lab/README.md)：专门为自己养的 OpenClaw 智能体提供合成题智力测评、独立评分、趣味报告与可复核记录。代码、Skill、测试及 HTML 均在 `clawiq-lab/` 目录，MIT 开源。
