@@ -2,6 +2,8 @@
 from __future__ import annotations
 
 import json
+import os
+import re
 import shutil
 import subprocess
 import tempfile
@@ -13,25 +15,46 @@ class RunnerUnavailable(RuntimeError):
     pass
 
 
-def check_openclaw_cli(*, backend: str = "isolated") -> None:
+def check_openclaw_cli(*, backend: str = "isolated", model: str | None = None) -> str:
     """Check the installed CLI interface without any provider/model requests."""
     if backend not in ("isolated", "gateway"):
         raise ValueError("unsupported OpenClaw backend")
     if shutil.which("openclaw") is None:
         raise RunnerUnavailable("OpenClaw CLI is not installed in PATH")
     cmd = ["openclaw", "agent", "exec", "--help"] if backend == "isolated" else ["openclaw", "agent", "--help"]
-    required = (("--message-file", "--cwd", "--json", "--code-mode", "--config-override", "--timeout")
+    required = (("--message-file", "--cwd", "--json", "--code-mode", "--timeout")
                 if backend == "isolated" else
                 ("--message-file", "--agent", "--session-id", "--json", "--timeout"))
     try:
-        proc = subprocess.run(cmd, capture_output=True, text=True, timeout=15, check=False)
+        if model is not None:
+            with tempfile.TemporaryDirectory(prefix="clawiq-preflight-") as tmp:
+                env = {"PATH": os.environ.get("PATH", ""), "HOME": tmp, "USERPROFILE": tmp,
+                       "XDG_CONFIG_HOME": tmp, "OPENCLAW_STATE_DIR": str(Path(tmp) / "state"),
+                       "OPENCLAW_CONFIG_PATH": str(Path(tmp) / "absent.json"),
+                       "OPENCLAW_CONFIG_READONLY": "1"}
+                if "SYSTEMROOT" in os.environ:
+                    env["SYSTEMROOT"] = os.environ["SYSTEMROOT"]
+                proc = subprocess.run(cmd, env=env, cwd=tmp, capture_output=True, text=True, timeout=15, check=False)
+        else:
+            proc = subprocess.run(cmd, capture_output=True, text=True, timeout=15, check=False)
     except (OSError, subprocess.TimeoutExpired) as exc:
         raise RunnerUnavailable("OpenClaw CLI preflight failed") from exc
     if proc.returncode:
         raise RunnerUnavailable("OpenClaw CLI help returned an error")
-    missing = [flag for flag in required if flag not in proc.stdout + "\n" + proc.stderr]
+    help_text = proc.stdout + "\n" + proc.stderr
+    missing = [flag for flag in required if flag not in help_text]
     if missing:
         raise RunnerUnavailable("Unsupported OpenClaw CLI: missing " + ", ".join(missing))
+    if backend == "gateway":
+        return "gateway"
+    if model is None and "--config-override" in help_text:
+        return "override"
+    if "--config <" in help_text and "--model" in help_text:
+        if not model:
+            raise RunnerUnavailable("This CLI requires an explicit --model provider/model for a credential-isolated config; optionally select --provider-env NAME. No ambient config will be imported.")
+        validate_model_options(model, [])
+        return "config"
+    raise RunnerUnavailable("Unsupported OpenClaw CLI: safe configuration interface is unavailable")
 
 
 def extract_openclaw_text(text: str) -> str:
@@ -46,10 +69,10 @@ def extract_openclaw_text(text: str) -> str:
     if not isinstance(result, dict) or result.get("ok") is not True or result.get("status") != "ok":
         raise RunnerUnavailable("OpenClaw reported an unsuccessful run")
     tool_summary = result.get("toolSummary")
-    if isinstance(tool_summary, dict) and "calls" in tool_summary:
-        calls = tool_summary["calls"]
-        if type(calls) is not int or calls != 0:
-            raise RunnerUnavailable("Tool activity detected during a no-tools cognitive test")
+    if not isinstance(tool_summary, dict) or type(tool_summary.get("calls")) is not int:
+        raise RunnerUnavailable("No-tools execution evidence missing or invalid")
+    if tool_summary["calls"] != 0:
+        raise RunnerUnavailable("Tool activity detected during a no-tools cognitive test")
     answer = result.get("final")
     if not isinstance(answer, str) or not answer.strip():
         raise RunnerUnavailable("OpenClaw returned no final text")
@@ -123,3 +146,69 @@ def invoke_gateway_agent(prompt: str, *, agent_id: str = "main", timeout: int = 
         if not messages:
             raise RunnerUnavailable("Gateway did not provide a valid reply payload")
         return {"raw": messages[-1], "usage": None, "cost_usd": None}
+
+
+
+PROVIDER_ENV_NAMES = frozenset({"OPENAI_API_KEY", "ANTHROPIC_API_KEY", "GEMINI_API_KEY", "GOOGLE_API_KEY"})
+
+
+def validate_model_options(model: str | None, provider_env: list[str]) -> None:
+    if model is not None and not re.fullmatch(r"[A-Za-z0-9][A-Za-z0-9_.-]*/[A-Za-z0-9][A-Za-z0-9_./:-]{0,180}", model):
+        raise ValueError("--model must be an explicit provider/model identifier")
+    if provider_env and not model:
+        raise ValueError("--provider-env requires --model")
+    if any(name not in PROVIDER_ENV_NAMES for name in provider_env):
+        raise ValueError("Unsupported --provider-env name; allowed: " + ", ".join(sorted(PROVIDER_ENV_NAMES)))
+
+
+def minimal_config() -> dict[str, Any]:
+    return {"tools": {"profile": "minimal", "deny": ["*"]},
+            "agents": {"defaults": {"contextInjection": "never", "skipBootstrap": True}},
+            "plugins": {"enabled": False}, "env": {"shellEnv": {"enabled": False}}}
+
+
+def invoke_configured_openclaw(prompt: str, *, model: str, provider_env: list[str],
+                              timeout: int = 120) -> dict[str, Any]:
+    """Explicit minimal configuration; never read or copy operator config/stores.
+
+    Provider env names must be selected by the operator. Values stay in the
+    child environment, never in config, command arguments, reports or logs.
+    This restricts discovery; it is not an OS/network sandbox.
+    """
+    validate_model_options(model, provider_env)
+    executable = shutil.which("openclaw")
+    if executable is None:
+        raise RunnerUnavailable("OpenClaw CLI is not installed in PATH")
+    with tempfile.TemporaryDirectory(prefix="clawiq-config-eval-") as tmp:
+        root = Path(tmp)
+        config = root / "openclaw.json"
+        with config.open("x", encoding="utf-8") as file:
+            os.chmod(config, 0o600)
+            json.dump(minimal_config(), file)
+        prompt_path = root / "question.md"
+        prompt_path.write_text(prompt, encoding="utf-8")
+        env = {"PATH": os.environ.get("PATH", ""), "HOME": tmp, "USERPROFILE": tmp,
+               "XDG_CONFIG_HOME": tmp, "OPENCLAW_STATE_DIR": str(root / "state"),
+               "OPENCLAW_CONFIG_PATH": str(config), "OPENCLAW_CONFIG_READONLY": "1"}
+        if "SYSTEMROOT" in os.environ:
+            env["SYSTEMROOT"] = os.environ["SYSTEMROOT"]
+        for name in provider_env:
+            if not os.environ.get(name):
+                raise RunnerUnavailable("Selected provider environment variable is missing: " + name)
+            env[name] = os.environ[name]
+        args = [executable, "agent", "exec", "--message-file", str(prompt_path),
+                "--cwd", tmp, "--config", str(config), "--model", model,
+                "--code-mode", "direct", "--json", "--timeout", str(timeout)]
+        try:
+            completed = subprocess.run(args, cwd=tmp, env=env, capture_output=True,
+                                       text=True, timeout=timeout + 30, check=False)
+        except (OSError, subprocess.TimeoutExpired) as exc:
+            raise RunnerUnavailable("Explicit-config OpenClaw process failed or timed out") from exc
+        if completed.returncode != 0:
+            raise RunnerUnavailable(f"OpenClaw exited with code {completed.returncode}")
+        raw = extract_openclaw_text(completed.stdout)
+        meta = json.loads(completed.stdout)
+        summary = meta.get("toolSummary")
+        if not isinstance(summary, dict) or type(summary.get("calls")) is not int or summary["calls"] != 0:
+            raise RunnerUnavailable("No-tools execution evidence missing or invalid")
+        return {"raw": raw, "usage": meta.get("usage"), "cost_usd": meta.get("costUsd")}
