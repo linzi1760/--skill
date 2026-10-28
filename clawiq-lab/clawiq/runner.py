@@ -69,10 +69,10 @@ def extract_openclaw_text(text: str) -> str:
     if not isinstance(result, dict) or result.get("ok") is not True or result.get("status") != "ok":
         raise RunnerUnavailable("OpenClaw reported an unsuccessful run")
     tool_summary = result.get("toolSummary")
-    if isinstance(tool_summary, dict) and "calls" in tool_summary:
-        calls = tool_summary["calls"]
-        if type(calls) is not int or calls != 0:
-            raise RunnerUnavailable("Tool activity detected during a no-tools cognitive test")
+    if not isinstance(tool_summary, dict) or type(tool_summary.get("calls")) is not int:
+        raise RunnerUnavailable("No-tools execution evidence missing or invalid")
+    if tool_summary["calls"] != 0:
+        raise RunnerUnavailable("Tool activity detected during a no-tools cognitive test")
     answer = result.get("final")
     if not isinstance(answer, str) or not answer.strip():
         raise RunnerUnavailable("OpenClaw returned no final text")

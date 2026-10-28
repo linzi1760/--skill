@@ -6,7 +6,7 @@ from clawiq.runner import extract_openclaw_text, invoke_openclaw, check_openclaw
 
 class RunnerTests(unittest.TestCase):
     def test_exec_json(self):
-        data={'ok':True,'status':'ok','final':'{"answer":42}', 'usage':{'total':150}}
+        data={'ok':True,'status':'ok','final':'{"answer":42}', 'usage':{'total':150}, 'toolSummary':{'calls':0}}
         self.assertEqual(extract_openclaw_text(json.dumps(data)),'{"answer":42}')
 
     def test_failed_not_scored(self):
@@ -17,7 +17,7 @@ class RunnerTests(unittest.TestCase):
     @patch('clawiq.runner.shutil.which',return_value='/usr/local/bin/openclaw')
     @patch('clawiq.runner.subprocess.run')
     def test_sandbox_flags_and_invocation(self, run, which):
-        run.return_value = Mock(returncode=0,stdout=json.dumps({'ok':True,'status':'ok','final':'{"answer":5}','usage':{'total':10}}))
+        run.return_value = Mock(returncode=0,stdout=json.dumps({'ok':True,'status':'ok','final':'{"answer":5}','usage':{'total':10},'toolSummary':{'calls':0}}))
         result=invoke_openclaw('fake prompt')
         self.assertEqual(result['raw'],'{"answer":5}')
         self.assertEqual(result['usage']['total'],10)
@@ -37,6 +37,20 @@ class RunnerTests(unittest.TestCase):
         reply={'ok':True,'status':'ok','final':'{"answer":42}', 'toolSummary':{'calls':1}}
         with self.assertRaises(RunnerUnavailable):
             extract_openclaw_text(json.dumps(reply))
+
+    def test_missing_or_malformed_tool_receipt_fails_closed(self):
+        for summary in (None, {}, {'calls':False}, {'calls':True}, {'calls':'0'}, {'calls':0.0}):
+            with self.subTest(summary=summary), self.assertRaises(RunnerUnavailable):
+                extract_openclaw_text(json.dumps({'ok':True, 'status':'ok',
+                    'final':'{"answer":42}', 'toolSummary':summary}))
+
+    @patch('clawiq.runner.shutil.which', return_value='/usr/local/bin/openclaw')
+    @patch('clawiq.runner.subprocess.run')
+    def test_override_adapter_rejects_missing_tool_receipt(self, run, which):
+        run.return_value=Mock(returncode=0,stdout=json.dumps({'ok':True,
+            'status':'ok','final':'{"answer":5}'}))
+        with self.assertRaises(RunnerUnavailable):
+            invoke_openclaw('synthetic offline prompt')
 
     @patch('clawiq.runner.shutil.which',return_value='/usr/bin/openclaw')
     @patch('clawiq.runner.subprocess.run')
